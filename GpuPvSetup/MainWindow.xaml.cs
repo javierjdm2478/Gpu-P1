@@ -1,0 +1,339 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Management;
+using System.Threading.Tasks;
+using System.Windows;
+
+namespace GpuPvSetup
+{
+    public partial class MainWindow : Window
+    {
+        public MainWindow()
+        {
+            InitializeComponent();
+            LoadVirtualMachines();
+        }
+
+        private async void RefreshVmButton_Click(object sender, RoutedEventArgs e)
+        {
+            await LoadVirtualMachines();
+        }
+
+        private async Task LoadVirtualMachines()
+        {
+            VmComboBox.Items.Clear();
+            RefreshVmButton.IsEnabled = false;
+            LogMessage("Cargando lista de Máquinas Virtuales...");
+
+            try
+            {
+                // Obtenemos las VMs de Hyper-V mediante PowerShell de manera asíncrona
+                var vms = await Task.Run(() => RunPowerShellCommand("Get-VM | Select-Object -ExpandProperty Name"));
+                var vmList = vms.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+
+                foreach (var vm in vmList)
+                {
+                    VmComboBox.Items.Add(vm);
+                }
+
+                if (VmComboBox.Items.Count > 0)
+                {
+                    VmComboBox.SelectedIndex = 0;
+                    LogMessage($"Se encontraron {VmComboBox.Items.Count} máquinas virtuales.");
+                }
+                else
+                {
+                    LogMessage("No se encontraron máquinas virtuales en Hyper-V.");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogMessage($"Error al cargar VMs: {ex.Message}");
+            }
+            finally
+            {
+                RefreshVmButton.IsEnabled = true;
+            }
+        }
+
+        private async void ApplyButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (VmComboBox.SelectedItem == null)
+            {
+                MessageBox.Show("Por favor, seleccione una máquina virtual primero.", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            string selectedVm = VmComboBox.SelectedItem.ToString() ?? string.Empty;
+
+            // Preparamos la UI para el trabajo en segundo plano
+            ApplyButton.IsEnabled = false;
+            RefreshVmButton.IsEnabled = false;
+            VmComboBox.IsEnabled = false;
+            ActionProgressBar.IsIndeterminate = true;
+            LogTextBlock.Text = "";
+
+            // Creamos un objeto para reportar el progreso desde el hilo secundario
+            var progress = new Progress<string>(message =>
+            {
+                StatusTextBlock.Text = message;
+                LogMessage(message);
+            });
+
+            try
+            {
+                // Ejecutamos todo el proceso pesado en un hilo secundario
+                await Task.Run(() => ConfigureGpuPvAsync(selectedVm, progress));
+                MessageBox.Show("¡Configuración GPU-PV completada con éxito!", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                LogMessage($"ERROR CRÍTICO: {ex.Message}");
+                MessageBox.Show($"Ocurrió un error:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                // Restauramos la UI
+                ApplyButton.IsEnabled = true;
+                RefreshVmButton.IsEnabled = true;
+                VmComboBox.IsEnabled = true;
+                ActionProgressBar.IsIndeterminate = false;
+                StatusTextBlock.Text = "Listo.";
+            }
+        }
+
+        private void ConfigureGpuPvAsync(string vmName, IProgress<string> progress)
+        {
+            bool wasVmRunning = false;
+            string mountPath = string.Empty;
+
+            try
+            {
+                // 1. Detección de GPU Host
+                progress.Report("Paso 1: Detectando GPU del Host y buscando Drivers...");
+                var (gpuVendor, driverPath) = DetectHostGpuAndDriver();
+                if (string.IsNullOrEmpty(driverPath))
+                    throw new Exception("No se pudo localizar el driver de la GPU en el Host.");
+
+                progress.Report($"GPU Detectada: {gpuVendor}");
+                progress.Report($"Ruta del Driver: {driverPath}");
+
+                // 2. Gestionar estado de la VM (Apagar si está encendida)
+                progress.Report("Paso 2: Comprobando estado de la VM...");
+                string vmState = RunPowerShellCommand($"Get-VM -Name '{vmName}' | Select-Object -ExpandProperty State").Trim();
+
+                if (vmState.Equals("Running", StringComparison.OrdinalIgnoreCase))
+                {
+                    wasVmRunning = true;
+                    progress.Report($"La VM '{vmName}' está encendida. Apagando suavemente...");
+                    RunPowerShellCommand($"Stop-VM -Name '{vmName}' -Force");
+                    progress.Report("VM apagada.");
+                }
+
+                // 3. Configuración MMIO y Adapter
+                progress.Report("Paso 3: Configurando MMIO y añadiendo VmgpuPartitionAdapter...");
+                RunPowerShellCommand($"Set-VM -Name '{vmName}' -GuestControlledCacheTypes $true -LowMemoryMappedIoSpace 3Gb -HighMemoryMappedIoSpace 33Gb");
+                RunPowerShellCommand($"Add-VMGpuPartitionAdapter -VMName '{vmName}'");
+
+                // 4. Montar VHDX
+                progress.Report("Paso 4: Buscando y montando el disco VHDX...");
+                string vhdxPath = RunPowerShellCommand($"(Get-VMHardDiskDrive -VMName '{vmName}').Path").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
+
+                if (string.IsNullOrEmpty(vhdxPath) || !File.Exists(vhdxPath))
+                    throw new Exception($"No se encontró un archivo VHDX válido para la VM en la ruta: {vhdxPath}");
+
+                progress.Report($"Montando VHDX: {vhdxPath}");
+                // Mount-VHD y obtención de la letra de la partición de Windows (suele ser la de mayor tamaño)
+                string scriptMount = $@"
+                    $vhd = Mount-VHD -Path '{vhdxPath}' -PassThru
+                    $vol = Get-Disk -Number $vhd.DiskNumber | Get-Partition | Get-Volume | Where-Object {{ $_.DriveLetter }} | Sort-Object Size -Descending | Select-Object -First 1
+                    $vol.DriveLetter
+                ";
+                string driveLetter = RunPowerShellCommand(scriptMount).Trim();
+
+                if (string.IsNullOrEmpty(driveLetter))
+                    throw new Exception("No se pudo obtener la letra de la unidad montada del VHDX.");
+
+                mountPath = $"{driveLetter}:\\";
+                progress.Report($"VHDX montado en la unidad {mountPath}");
+
+                // 5. Copia de archivos del driver
+                progress.Report("Paso 5: Copiando archivos de driver a la VM...");
+                string vmDriverStorePath = Path.Combine(mountPath, @"Windows\System32\HostDriverStore\FileRepository");
+                string destDriverFolder = Path.Combine(vmDriverStorePath, new DirectoryInfo(driverPath).Name);
+
+                if (!Directory.Exists(vmDriverStorePath))
+                {
+                    Directory.CreateDirectory(vmDriverStorePath);
+                }
+
+                CopyDirectory(driverPath, destDriverFolder, progress);
+
+                // Lógica condicional: NVIDIA nvapi64.dll
+                if (gpuVendor.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase))
+                {
+                    progress.Report("NVIDIA detectada: Copiando nvapi64.dll al System32 de la VM...");
+                    string nvapiHostPath = Path.Combine(Environment.SystemDirectory, "nvapi64.dll");
+                    string nvapiVmPath = Path.Combine(mountPath, @"Windows\System32\nvapi64.dll");
+
+                    if (File.Exists(nvapiHostPath))
+                    {
+                        File.Copy(nvapiHostPath, nvapiVmPath, true);
+                        progress.Report("nvapi64.dll copiado correctamente.");
+                    }
+                    else
+                    {
+                        progress.Report("ADVERTENCIA: No se encontró nvapi64.dll en el Host System32.");
+                    }
+                }
+
+                progress.Report("Proceso principal finalizado correctamente.");
+            }
+            finally
+            {
+                // 6. Restauración: Desmontar VHDX y reiniciar si es necesario
+                progress.Report("Paso 6: Limpieza y Restauración...");
+
+                if (!string.IsNullOrEmpty(mountPath))
+                {
+                    progress.Report("Desmontando VHDX de forma segura...");
+                    string vhdxPath = RunPowerShellCommand($"(Get-VMHardDiskDrive -VMName '{vmName}').Path").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
+                    if (!string.IsNullOrEmpty(vhdxPath))
+                    {
+                         RunPowerShellCommand($"Dismount-VHD -Path '{vhdxPath}'");
+                         progress.Report("VHDX desmontado.");
+                    }
+                }
+
+                if (wasVmRunning)
+                {
+                    progress.Report($"Reiniciando la VM '{vmName}' automáticamente...");
+                    RunPowerShellCommand($"Start-VM -Name '{vmName}'");
+                    progress.Report("VM iniciada.");
+                }
+
+                progress.Report("Operación terminada.");
+            }
+        }
+
+        private (string Vendor, string DriverPath) DetectHostGpuAndDriver()
+        {
+            // Usamos WMI para buscar el controlador de video
+            using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_VideoController"))
+            {
+                foreach (ManagementObject obj in searcher.Get())
+                {
+                    string name = obj["Name"]?.ToString() ?? string.Empty;
+                    string pnpDeviceId = obj["PNPDeviceID"]?.ToString() ?? string.Empty;
+
+                    // Ignorar adaptadores básicos o remotos
+                    if (name.Contains("Microsoft Basic", StringComparison.OrdinalIgnoreCase) ||
+                        name.Contains("Remote", StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    // Para encontrar la ruta exacta del driver en DriverStore, necesitamos la clave del registro o usar PowerShell
+                    // Usamos un comando PnP de PowerShell más confiable para obtener el inf:
+                    string script = $@"
+                        $device = Get-PnpDevice -FriendlyName '{name}' -ErrorAction SilentlyContinue | Select-Object -First 1
+                        if ($device) {{
+                            $driverInfo = Get-PnpDeviceProperty -InstanceId $device.InstanceId -KeyName 'DEVPKEY_Device_Driver' -ErrorAction SilentlyContinue
+                            if ($driverInfo) {{
+                                $infName = $driverInfo.Data
+                                $driverStore = 'C:\Windows\System32\DriverStore\FileRepository'
+                                $folders = Get-ChildItem -Path $driverStore -Directory -Filter ""$($infName.Split('.')[0])*""
+                                if ($folders) {{
+                                    $folders[0].FullName
+                                }}
+                            }}
+                        }}
+                    ";
+
+                    string driverPath = RunPowerShellCommand(script).Trim();
+
+                    if (!string.IsNullOrEmpty(driverPath) && Directory.Exists(driverPath))
+                    {
+                        return (name, driverPath);
+                    }
+                }
+            }
+            return ("Unknown", string.Empty);
+        }
+
+        private void CopyDirectory(string sourceDir, string destinationDir, IProgress<string> progress)
+        {
+            var dir = new DirectoryInfo(sourceDir);
+
+            if (!dir.Exists)
+                throw new DirectoryNotFoundException($"Source directory not found: {dir.FullName}");
+
+            DirectoryInfo[] dirs = dir.GetDirectories();
+            Directory.CreateDirectory(destinationDir);
+
+            FileInfo[] files = dir.GetFiles();
+            int totalFiles = files.Length;
+            int count = 0;
+
+            foreach (FileInfo file in files)
+            {
+                string targetFilePath = Path.Combine(destinationDir, file.Name);
+                file.CopyTo(targetFilePath, true);
+                count++;
+
+                // Actualizar progreso sin saturar la UI (cada 10 archivos)
+                if (count % 10 == 0 || count == totalFiles)
+                {
+                     progress.Report($"Copiando archivos del driver... ({count}/{totalFiles})");
+                }
+            }
+
+            foreach (DirectoryInfo subDir in dirs)
+            {
+                string newDestinationDir = Path.Combine(destinationDir, subDir.Name);
+                CopyDirectory(subDir.FullName, newDestinationDir, progress); // No mostramos sub-progreso para simplificar
+            }
+        }
+
+        private string RunPowerShellCommand(string command)
+        {
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{command}\"",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using (var process = Process.Start(startInfo))
+            {
+                if (process == null) return string.Empty;
+                string output = process.StandardOutput.ReadToEnd();
+                string error = process.StandardError.ReadToEnd();
+                process.WaitForExit();
+
+                if (!string.IsNullOrEmpty(error))
+                {
+                    // Algunos comandos PS envían advertencias a StdErr, si es fatal, deberíamos controlarlo.
+                    // Aquí lo registramos en consola de debug.
+                    Debug.WriteLine($"PS Error: {error}");
+                }
+
+                return output;
+            }
+        }
+
+        private void LogMessage(string message)
+        {
+            // Aseguramos que se ejecute en el hilo de la UI
+            Dispatcher.Invoke(() =>
+            {
+                LogTextBlock.Text += $"[{DateTime.Now:HH:mm:ss}] {message}\n";
+                LogScrollViewer.ScrollToEnd();
+            });
+        }
+    }
+}
