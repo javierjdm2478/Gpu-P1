@@ -227,25 +227,51 @@ namespace GpuPvSetup
                 foreach (ManagementObject obj in searcher.Get())
                 {
                     string name = obj["Name"]?.ToString() ?? string.Empty;
-                    string pnpDeviceId = obj["PNPDeviceID"]?.ToString() ?? string.Empty;
 
                     // Ignorar adaptadores básicos o remotos
                     if (name.Contains("Microsoft Basic", StringComparison.OrdinalIgnoreCase) ||
                         name.Contains("Remote", StringComparison.OrdinalIgnoreCase))
                         continue;
 
-                    // Para encontrar la ruta exacta del driver en DriverStore, necesitamos la clave del registro o usar PowerShell
-                    // Usamos un comando PnP de PowerShell más confiable para obtener el inf:
+                    // Método 1: Intentar leer 'InstalledDisplayDrivers' (Suele funcionar bien para AMD e Intel, y a veces NVIDIA)
+                    string installedDrivers = obj["InstalledDisplayDrivers"]?.ToString() ?? string.Empty;
+                    if (!string.IsNullOrEmpty(installedDrivers))
+                    {
+                        var paths = installedDrivers.Split(',');
+                        foreach (var path in paths)
+                        {
+                            if (path.Contains(@"DriverStore\FileRepository", StringComparison.OrdinalIgnoreCase))
+                            {
+                                string dir = Path.GetDirectoryName(path);
+                                if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
+                                {
+                                    return (name, dir);
+                                }
+                            }
+                        }
+                    }
+
+                    // Método 2: Usar PowerShell con WMI para consultar la clave del registro del servicio y extraer el ImagePath o usar pnputil
+                    // Este es un enfoque mucho más robusto que no depende del módulo PnpDevice, que puede fallar o estar ausente.
                     string script = $@"
-                        $device = Get-PnpDevice -FriendlyName '{name}' -ErrorAction SilentlyContinue | Select-Object -First 1
-                        if ($device) {{
-                            $driverInfo = Get-PnpDeviceProperty -InstanceId $device.InstanceId -KeyName 'DEVPKEY_Device_Driver' -ErrorAction SilentlyContinue
-                            if ($driverInfo) {{
-                                $infName = $driverInfo.Data
-                                $driverStore = 'C:\Windows\System32\DriverStore\FileRepository'
-                                $folders = Get-ChildItem -Path $driverStore -Directory -Filter ""$($infName.Split('.')[0])*""
-                                if ($folders) {{
-                                    $folders[0].FullName
+                        $ErrorActionPreference = 'SilentlyContinue'
+                        $gpu = Get-CimInstance Win32_VideoController | Where-Object {{ $_.Name -like '*{name}*' }} | Select-Object -First 1
+                        if ($gpu) {{
+                            $pnpId = $gpu.PNPDeviceID
+                            # Escapar los caracteres para regex
+                            $escapedPnpId = [regex]::Escape($pnpId)
+                            # Buscar en pnputil el nombre original del INF (oemXX.inf)
+                            $pnpOut = pnputil /enum-devices /instanceid ""$pnpId""
+                            $infLine = $pnpOut | Select-String -Pattern 'Published Name:|Nombre publicado:' | Select-Object -First 1
+                            if ($infLine) {{
+                                $infName = ($infLine -split ':')[1].Trim()
+                                if ($infName) {{
+                                    $driverStore = 'C:\Windows\System32\DriverStore\FileRepository'
+                                    # Buscar la carpeta que contiene el inf publicado
+                                    $folders = Get-ChildItem -Path $driverStore -Directory -Filter ""$($infName.Split('.')[0])*""
+                                    if ($folders) {{
+                                        $folders[0].FullName
+                                    }}
                                 }}
                             }}
                         }}
