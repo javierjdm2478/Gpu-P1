@@ -1,0 +1,3 @@
+## 2024-05-24 - WPF Custom Control Templates and Keyboard Focus
+**Learning:** When creating custom `ControlTemplate`s in WPF (e.g., for a `Button`), the default keyboard focus visual cues provided by the OS are completely stripped away. This breaks keyboard navigation accessibility because users tabbing through the interface cannot see which element has focus.
+**Action:** Always add a trigger for `IsKeyboardFocused="True"` within the `ControlTemplate.Triggers` to explicitly define a visual focus indicator (like changing a `BorderBrush` to a high-contrast color) when overriding default control templates in WPF.
