@@ -1,0 +1,4 @@
+## 2024-03-24 - Command Injection in PowerShell Execution via String Concatenation
+**Vulnerability:** Arbitrary command execution vulnerability via unsanitized variables (VM name, disk path, GPU name) in PowerShell command strings and Arguments parameter.
+**Learning:** Using raw string concatenation for ProcessStartInfo.Arguments and dynamically injecting single-quoted strings into PowerShell scripts allows attackers to escape single quotes by inserting `'` into input fields (e.g. WMI properties or VM names), subsequently executing arbitrary code.
+**Prevention:** Use `ProcessStartInfo.ArgumentList` to pass the script string and explicitly escape single quotes `input.Replace("'", "''")` when placing user-controlled or external data inside single-quoted strings within a PowerShell script execution context.
