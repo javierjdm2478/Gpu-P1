@@ -1,0 +1,3 @@
+## 2024-03-07 - WPF Screen Reader Accessibility
+**Learning:** In WPF, `TextBlock` elements are not easily associated with input fields by screen readers. Using `Label` with a `Target="{Binding ElementName=...}"` binding, along with adding `AutomationProperties.Name` and `ToolTip` to interactive elements (like `ComboBox` and `Button`), significantly improves the accessibility and user experience for screen reader users.
+**Action:** Always prefer `Label` with a `Target` binding over `TextBlock` for form input labels, and consistently apply `AutomationProperties.Name` and `ToolTip` to all interactive controls.
