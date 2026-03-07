@@ -1,0 +1,4 @@
+## 2024-05-20 - Command Injection Prevention in PowerShell Execution via C#
+**Vulnerability:** Command injection and script breakout vulnerability due to string concatenation of dynamic inputs into PowerShell commands passed via `ProcessStartInfo.Arguments`.
+**Learning:** Using `ProcessStartInfo.Arguments` is unsafe as it exposes the process to argument-level injection. Additionally, directly embedding unescaped strings into PowerShell scripts can lead to code execution if a string contains single quotes (`'`).
+**Prevention:** Use `ProcessStartInfo.ArgumentList` to securely pass arguments to the process, bypassing string concatenation vulnerabilities at the OS level. Furthermore, always sanitize dynamic inputs embedded in PowerShell strings by escaping single quotes (`Replace("'", "''")`).
