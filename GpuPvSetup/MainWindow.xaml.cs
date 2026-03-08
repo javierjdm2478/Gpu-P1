@@ -112,6 +112,9 @@ namespace GpuPvSetup
 
             try
             {
+                // Escape simple quotes for PowerShell command injection prevention
+                string safeVmName = vmName.Replace("'", "''");
+
                 // 1. Detección de GPU Host
                 progress.Report("Paso 1: Detectando GPU del Host y buscando Drivers...");
                 var (gpuVendor, driverPath) = DetectHostGpuAndDriver();
@@ -123,32 +126,34 @@ namespace GpuPvSetup
 
                 // 2. Gestionar estado de la VM (Apagar si está encendida)
                 progress.Report("Paso 2: Comprobando estado de la VM...");
-                string vmState = RunPowerShellCommand($"Get-VM -Name '{vmName}' | Select-Object -ExpandProperty State").Trim();
+                string vmState = RunPowerShellCommand($"Get-VM -Name '{safeVmName}' | Select-Object -ExpandProperty State").Trim();
 
                 if (vmState.Equals("Running", StringComparison.OrdinalIgnoreCase))
                 {
                     wasVmRunning = true;
                     progress.Report($"La VM '{vmName}' está encendida. Apagando suavemente...");
-                    RunPowerShellCommand($"Stop-VM -Name '{vmName}' -Force");
+                    RunPowerShellCommand($"Stop-VM -Name '{safeVmName}' -Force");
                     progress.Report("VM apagada.");
                 }
 
                 // 3. Configuración MMIO y Adapter
                 progress.Report("Paso 3: Configurando MMIO y añadiendo VmgpuPartitionAdapter...");
-                RunPowerShellCommand($"Set-VM -Name '{vmName}' -GuestControlledCacheTypes $true -LowMemoryMappedIoSpace 3Gb -HighMemoryMappedIoSpace 33Gb");
-                RunPowerShellCommand($"Add-VMGpuPartitionAdapter -VMName '{vmName}'");
+                RunPowerShellCommand($"Set-VM -Name '{safeVmName}' -GuestControlledCacheTypes $true -LowMemoryMappedIoSpace 3Gb -HighMemoryMappedIoSpace 33Gb");
+                RunPowerShellCommand($"Add-VMGpuPartitionAdapter -VMName '{safeVmName}'");
 
                 // 4. Montar VHDX
                 progress.Report("Paso 4: Buscando y montando el disco VHDX...");
-                string vhdxPath = RunPowerShellCommand($"(Get-VMHardDiskDrive -VMName '{vmName}').Path").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
+                string vhdxPath = RunPowerShellCommand($"(Get-VMHardDiskDrive -VMName '{safeVmName}').Path").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
 
                 if (string.IsNullOrEmpty(vhdxPath) || !File.Exists(vhdxPath))
                     throw new Exception($"No se encontró un archivo VHDX válido para la VM en la ruta: {vhdxPath}");
 
+                string safeVhdxPath = vhdxPath.Replace("'", "''");
+
                 progress.Report($"Montando VHDX: {vhdxPath}");
                 // Mount-VHD y obtención de la letra de la partición de Windows (suele ser la de mayor tamaño)
                 string scriptMount = $@"
-                    $vhd = Mount-VHD -Path '{vhdxPath}' -PassThru
+                    $vhd = Mount-VHD -Path '{safeVhdxPath}' -PassThru
                     $vol = Get-Disk -Number $vhd.DiskNumber | Get-Partition | Get-Volume | Where-Object {{ $_.DriveLetter }} | Sort-Object Size -Descending | Select-Object -First 1
                     $vol.DriveLetter
                 ";
@@ -197,13 +202,17 @@ namespace GpuPvSetup
                 // 6. Restauración: Desmontar VHDX y reiniciar si es necesario
                 progress.Report("Paso 6: Limpieza y Restauración...");
 
+                // Escape simple quotes for PowerShell command injection prevention
+                string safeVmName = vmName.Replace("'", "''");
+
                 if (!string.IsNullOrEmpty(mountPath))
                 {
                     progress.Report("Desmontando VHDX de forma segura...");
-                    string vhdxPath = RunPowerShellCommand($"(Get-VMHardDiskDrive -VMName '{vmName}').Path").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
+                    string vhdxPath = RunPowerShellCommand($"(Get-VMHardDiskDrive -VMName '{safeVmName}').Path").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
                     if (!string.IsNullOrEmpty(vhdxPath))
                     {
-                         RunPowerShellCommand($"Dismount-VHD -Path '{vhdxPath}'");
+                         string safeVhdxPath = vhdxPath.Replace("'", "''");
+                         RunPowerShellCommand($"Dismount-VHD -Path '{safeVhdxPath}'");
                          progress.Report("VHDX desmontado.");
                     }
                 }
@@ -211,7 +220,7 @@ namespace GpuPvSetup
                 if (wasVmRunning)
                 {
                     progress.Report($"Reiniciando la VM '{vmName}' automáticamente...");
-                    RunPowerShellCommand($"Start-VM -Name '{vmName}'");
+                    RunPowerShellCommand($"Start-VM -Name '{safeVmName}'");
                     progress.Report("VM iniciada.");
                 }
 
@@ -232,6 +241,8 @@ namespace GpuPvSetup
                     if (name.Contains("Microsoft Basic", StringComparison.OrdinalIgnoreCase) ||
                         name.Contains("Remote", StringComparison.OrdinalIgnoreCase))
                         continue;
+
+                    string safeName = name.Replace("'", "''");
 
                     // Método 1: Intentar leer 'InstalledDisplayDrivers' (Suele funcionar bien para AMD e Intel, y a veces NVIDIA)
                     string installedDrivers = obj["InstalledDisplayDrivers"]?.ToString() ?? string.Empty;
@@ -255,7 +266,7 @@ namespace GpuPvSetup
                     // Este es un enfoque mucho más robusto que no depende del módulo PnpDevice, que puede fallar o estar ausente.
                     string script = $@"
                         $ErrorActionPreference = 'SilentlyContinue'
-                        $gpu = Get-CimInstance Win32_VideoController | Where-Object {{ $_.Name -like '*{name}*' }} | Select-Object -First 1
+                        $gpu = Get-CimInstance Win32_VideoController | Where-Object {{ $_.Name -like '*{safeName}*' }} | Select-Object -First 1
                         if ($gpu) {{
                             $pnpId = $gpu.PNPDeviceID
                             # Escapar los caracteres para regex
@@ -327,12 +338,17 @@ namespace GpuPvSetup
             var startInfo = new ProcessStartInfo
             {
                 FileName = "powershell.exe",
-                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{command}\"",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
+
+            startInfo.ArgumentList.Add("-NoProfile");
+            startInfo.ArgumentList.Add("-ExecutionPolicy");
+            startInfo.ArgumentList.Add("Bypass");
+            startInfo.ArgumentList.Add("-Command");
+            startInfo.ArgumentList.Add(command);
 
             using (var process = Process.Start(startInfo))
             {
