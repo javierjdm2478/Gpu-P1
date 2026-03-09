@@ -1,0 +1,3 @@
+## 2024-05-18 - Improve WPF screen reader accessibility for input fields
+**Learning:** In WPF, using a `TextBlock` for input field labels prevents screen readers from properly associating the label with the input.
+**Action:** Always use a `Label` with a `Target` binding (e.g., `Target="{Binding ElementName=VmComboBox}"`) instead of a `TextBlock` for input fields, and apply `AutomationProperties.Name` and `ToolTip` attributes to interactive elements like buttons and combo boxes to ensure full keyboard navigation and screen reader support.
