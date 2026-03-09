@@ -1,0 +1,4 @@
+## 2024-05-02 - PowerShell Command Injection Vulnerability via Concatenation
+**Vulnerability:** PowerShell execution in `RunPowerShellCommand` was using a concatenated string in `Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{command}\""`, allowing command injection via dynamic inputs like `vmName` and `vhdxPath`.
+**Learning:** Passing `-Command` arguments as a single concatenated string to `powershell.exe` allows an attacker to escape string contexts with single/double quotes or use semi-colons/ampersands to execute arbitrary additional commands.
+**Prevention:** Always use `ProcessStartInfo.ArgumentList` to pass the command and arguments as discrete elements to `powershell.exe`. Additionally, if a PowerShell script block requires passing dynamic values, thoroughly sanitize those inputs (e.g., escaping single quotes via `.Replace("'", "''")`) to prevent them from breaking out of string literals within the script.
