@@ -1,0 +1,3 @@
+## 2024-05-24 - Efficient Logging in WPF
+**Learning:** For WPF UI logging and frequent text updates, using string concatenation `+=` with `TextBlock.Text` causes O(N^2) memory allocations and UI thread performance bottlenecks. Using `TextBox.AppendText()` is vastly more efficient for appending strings to the UI.
+**Action:** Use `TextBox` with `IsReadOnly="True"`, `Background="Transparent"`, and `BorderThickness="0"` to visually mimic a `TextBlock` but utilize the efficient `AppendText` method instead.
