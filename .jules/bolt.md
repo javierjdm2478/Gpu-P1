@@ -1,0 +1,3 @@
+## 2025-02-23 - Avoid O(N²) String Concatenation in WPF Logging
+**Learning:** Concatenating strings to a `TextBlock.Text` property inside a `ScrollViewer` (e.g., `LogTextBlock.Text += message`) causes O(N²) memory allocations. In a long-running process that outputs many logs, this quickly becomes a major performance bottleneck, freezing the main UI thread as garbage collection and layout rendering struggle to keep up.
+**Action:** Always use `TextBox.AppendText()` for frequent UI text updates or logging consoles in WPF instead of string concatenation. It is heavily optimized for appending strings with amortized O(1) performance and handles large volumes of text smoothly.
