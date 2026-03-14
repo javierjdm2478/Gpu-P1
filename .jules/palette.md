@@ -1,0 +1,3 @@
+## 2024-05-24 - WPF Screen Reader Accessibility
+**Learning:** By default, `TextBlock` elements in WPF are not read as labels for inputs by screen readers. Furthermore, interactive elements often lack clear context for assistive technologies without explicit properties.
+**Action:** Always use `<Label Target="{Binding ElementName=ControlName}">` instead of `TextBlock` for input descriptions. Add `AutomationProperties.Name` to provide a clear, concise accessible name, and use `ToolTip` to provide additional context on hover for interactive elements like buttons and comboboxes.
