@@ -1,0 +1,4 @@
+## 2025-02-17 - PowerShell Command Injection Prevention
+**Vulnerability:** User input values for the VM Name (`vmName`) and VHDX Path (`vhdxPath`) were interpolated directly into dynamic PowerShell scripts string (`RunPowerShellCommand`) which were then passed to `powershell.exe` using string-concatenated `Arguments`. This created an opportunity for command injection to break out of single quotes within the script block or by adding execution flags in the arguments.
+**Learning:** `ProcessStartInfo.Arguments` is vulnerable to OS-level argument injection. Furthermore, dynamic values directly concatenated in a PowerShell script need explicit quoting to prevent command execution escape patterns.
+**Prevention:** Always escape single quotes in strings injected into PowerShell scripts by doubling them (`Replace("'", "''")`), and use `ProcessStartInfo.ArgumentList` instead of `ProcessStartInfo.Arguments` to cleanly parse and sandbox process arguments through .NET.
