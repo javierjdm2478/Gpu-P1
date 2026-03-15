@@ -1,0 +1,3 @@
+## 2024-05-24 - [WPF Logging Optimization]
+**Learning:** Using `TextBlock.Text +=` for frequent string updates in WPF creates an O(N^2) memory allocation problem, creating significant garbage collection pressure and potentially blocking the UI thread on high-frequency log updates.
+**Action:** Always use a `TextBox` with `IsReadOnly="True"` and leverage `TextBox.AppendText()` for appending strings efficiently in WPF UI components that log or stream data.
