@@ -1,0 +1,8 @@
+## 2026-03-15 - PowerShell Command Injection Fix
+**Vulnerability:** Command injection vulnerability in `RunPowerShellCommand` where unsanitized variables (`vmName`, `vhdxPath`, `name`) were concatenated into single-quoted PowerShell strings and `ProcessStartInfo.Arguments` was used directly.
+**Learning:** In .NET , using string interpolation for `Arguments` is unsafe. Furthermore, even if using `ArgumentsList`, dynamic variables embedded within the PowerShell script string itself must be sanitized against injection (e.g. by escaping single quotes).
+**Prevention:** Always use `ProcessStartInfo.ArgumentList` to separate the command execution flags from the script contents. Additionally, manually sanitize (escape) single quotes `'` as `''` for any external data interpolated into a PowerShell script.
+## 2026-03-15 - PowerShell Command Injection Fix
+**Vulnerability:** Command injection vulnerability in RunPowerShellCommand where unsanitized variables (vmName, vhdxPath, name) were concatenated into single-quoted PowerShell strings and ProcessStartInfo.Arguments was used directly.
+**Learning:** In .NET ProcessStartInfo, using string interpolation for Arguments is unsafe. Furthermore, even if using ArgumentsList, dynamic variables embedded within the PowerShell script string itself must be sanitized against injection (e.g. by escaping single quotes).
+**Prevention:** Always use ProcessStartInfo.ArgumentList to separate the command execution flags from the script contents. Additionally, manually sanitize (escape) single quotes ' as '' for any external data interpolated into a PowerShell script.
