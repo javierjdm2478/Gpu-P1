@@ -1,0 +1,4 @@
+## 2024-05-24 - PowerShell Command Injection via String Interpolation
+**Vulnerability:** Constructing PowerShell commands using string interpolation with unsanitized variables (like VM names or paths) and passing them via `ProcessStartInfo.Arguments` allows command injection if the variables contain single quotes or command separators.
+**Learning:** Using `Arguments` subjects the execution to shell parsing, where escaping is brittle. A malicious or malformed VM name (e.g., `My ' VM; Remove-Item / -Recurse -Force; #`) could escape the command string and execute arbitrary code.
+**Prevention:** Always use `ProcessStartInfo.ArgumentList` to pass arguments directly to `powershell.exe`, bypassing command-line parsing. Furthermore, when dynamically building scripts passed to the `-Command` argument, sanitize inputs by doubling single quotes (`.Replace("'", "''")`) to safely enclose variables within PowerShell string literals.
