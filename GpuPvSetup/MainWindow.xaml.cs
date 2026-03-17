@@ -107,6 +107,9 @@ namespace GpuPvSetup
 
         private void ConfigureGpuPvAsync(string vmName, IProgress<string> progress)
         {
+            // Sanitize vmName to prevent PowerShell script injection when interpolated inside single quotes.
+            vmName = vmName.Replace("'", "''");
+
             bool wasVmRunning = false;
             string mountPath = string.Empty;
 
@@ -145,10 +148,13 @@ namespace GpuPvSetup
                 if (string.IsNullOrEmpty(vhdxPath) || !File.Exists(vhdxPath))
                     throw new Exception($"No se encontró un archivo VHDX válido para la VM en la ruta: {vhdxPath}");
 
+                // Sanitize vhdxPath for interpolation inside single quotes
+                string safeVhdxPath = vhdxPath.Replace("'", "''");
+
                 progress.Report($"Montando VHDX: {vhdxPath}");
                 // Mount-VHD y obtención de la letra de la partición de Windows (suele ser la de mayor tamaño)
                 string scriptMount = $@"
-                    $vhd = Mount-VHD -Path '{vhdxPath}' -PassThru
+                    $vhd = Mount-VHD -Path '{safeVhdxPath}' -PassThru
                     $vol = Get-Disk -Number $vhd.DiskNumber | Get-Partition | Get-Volume | Where-Object {{ $_.DriveLetter }} | Sort-Object Size -Descending | Select-Object -First 1
                     $vol.DriveLetter
                 ";
@@ -203,7 +209,8 @@ namespace GpuPvSetup
                     string vhdxPath = RunPowerShellCommand($"(Get-VMHardDiskDrive -VMName '{vmName}').Path").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
                     if (!string.IsNullOrEmpty(vhdxPath))
                     {
-                         RunPowerShellCommand($"Dismount-VHD -Path '{vhdxPath}'");
+                         string safeVhdxPath = vhdxPath.Replace("'", "''");
+                         RunPowerShellCommand($"Dismount-VHD -Path '{safeVhdxPath}'");
                          progress.Report("VHDX desmontado.");
                     }
                 }
@@ -327,12 +334,17 @@ namespace GpuPvSetup
             var startInfo = new ProcessStartInfo
             {
                 FileName = "powershell.exe",
-                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{command}\"",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
+
+            startInfo.ArgumentList.Add("-NoProfile");
+            startInfo.ArgumentList.Add("-ExecutionPolicy");
+            startInfo.ArgumentList.Add("Bypass");
+            startInfo.ArgumentList.Add("-Command");
+            startInfo.ArgumentList.Add(command);
 
             using (var process = Process.Start(startInfo))
             {
