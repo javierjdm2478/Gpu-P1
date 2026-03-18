@@ -1,0 +1,3 @@
+## 2026-03-18 - Improve Screen Reader Accessibility with Label and AutomationProperties
+**Learning:** In WPF, using a simple `<TextBlock>` for labels isn't picked up appropriately by screen readers for associated form inputs. Additionally, interactive elements like ComboBoxes and ProgressBars without `AutomationProperties.Name` and `ToolTip` are silent or unclear.
+**Action:** Always replace `<TextBlock>` with a `<Label Target="{Binding ElementName=InputName}">` for form inputs (using `Padding="0"` to maintain the visual layout). Consistently add `AutomationProperties.Name` and descriptive `ToolTip` attributes to all interactive and status controls (buttons, comboboxes, progress bars, status messages) to ensure full keyboard and screen reader accessibility.
