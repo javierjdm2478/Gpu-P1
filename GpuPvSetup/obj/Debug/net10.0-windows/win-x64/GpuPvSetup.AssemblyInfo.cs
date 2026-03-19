@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GpuPvSetup")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+34f4e74733ec62380080127d54929ac33a8d7479")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f33fe0854fabd77c096ee2668b7aaef6cf301917")]
 [assembly: System.Reflection.AssemblyProductAttribute("GpuPvSetup")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GpuPvSetup")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

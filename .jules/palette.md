@@ -1,0 +1,3 @@
+## 2024-05-24 - WPF Accessibility Enhancements
+**Learning:** In WPF, `TextBlock` cannot have a `Target` property, so it's not ideal for labeling input fields for screen readers. Replacing `TextBlock` with `Label` allows using the `Target="{Binding ElementName=ElementId}"` property, properly associating the label with the input. Additionally, providing `AutomationProperties.Name` and `ToolTip` to interactive elements drastically improves screen reader context and user understanding.
+**Action:** When adding labels to input controls like `ComboBox` or `TextBox` in WPF, always use a `Label` control with the `Target` binding instead of a `TextBlock`. Ensure all interactive elements have meaningful `AutomationProperties.Name` and `ToolTip` definitions.
