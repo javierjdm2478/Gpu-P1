@@ -1,0 +1,3 @@
+## 2026-03-17 - Improve WPF Accessibility with Labels and AutomationProperties
+**Learning:** In WPF, using a `Label` with a `Target` binding provides better accessibility for screen readers compared to a plain `TextBlock`. Interactive elements like `ComboBox` and `Button` benefit significantly from `AutomationProperties.Name` and `ToolTip` to provide context and guidance.
+**Action:** Always prefer `Label` with `Target` binding over `TextBlock` when labeling form inputs in WPF. Always include `AutomationProperties.Name` and `ToolTip` on interactive elements to ensure accessibility for screen readers and improve the experience for all users.
