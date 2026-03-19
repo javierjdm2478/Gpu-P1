@@ -1,0 +1,3 @@
+## 2026-03-16 - WPF Screen Reader Accessibility
+**Learning:** In WPF, replacing a `TextBlock` with a `Label` that uses the `Target="{Binding ElementName=...}"` attribute greatly improves accessibility. It allows screen readers to correctly associate the descriptive label with the interactive input element (like a `ComboBox` or `TextBox`). Additionally, interactive elements like `ComboBox` and `Button` benefit from `AutomationProperties.Name` and `ToolTip` to provide context and intent to users relying on assistive technologies.
+**Action:** Default to using `Label` with a `Target` for input fields instead of plain `TextBlock`s. Always add `AutomationProperties.Name` and `ToolTip` attributes to interactive elements to ensure proper accessibility in WPF applications.
