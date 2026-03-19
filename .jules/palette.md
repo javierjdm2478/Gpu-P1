@@ -1,0 +1,3 @@
+## 2024-05-24 - Screen Reader Support in WPF Input Elements
+**Learning:** In WPF, screen readers struggle with raw `<TextBlock>` elements serving as visual labels for inputs because they lack a programmatic association. Additionally, interactive elements like `<ComboBox>` and `<Button>` benefit immensely from explicit `AutomationProperties.Name` and `ToolTip` properties for context, especially in a sparse desktop UI.
+**Action:** Replace `<TextBlock>` with `<Label>` utilizing the `Target="{Binding ElementName=ControlName}"` property to explicitly link the label to its input field. Always append `AutomationProperties.Name` for screen readers and `ToolTip` for sighted users to interactive UI elements to improve both accessibility and general usability.

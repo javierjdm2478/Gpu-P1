@@ -1,0 +1,5 @@
+
+# Visual Studio / msbuild build directories
+bin/
+obj/
+*.user
