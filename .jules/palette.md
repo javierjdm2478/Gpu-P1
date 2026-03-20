@@ -1,0 +1,3 @@
+## 2024-03-20 - Mejoras de Accesibilidad en WPF
+**Learning:** En WPF, para asegurar compatibilidad completa con lectores de pantalla, es mejor usar un `Label` con una propiedad `Target` hacia los campos de entrada, usando `Padding="0"` para mantener la integridad visual sin desplazamientos en la UI respecto a un TextBlock tradicional. A la par, el uso de `AutomationProperties.Name` y `ToolTip` incrementa de manera masiva la claridad al navegar controles mediante teclado.
+**Action:** Usar Label + Target en lugar de TextBlock para etiquetas de forms, y aplicar AutomationProperties.Name y ToolTip de forma sistemática a los controles interactivos.
