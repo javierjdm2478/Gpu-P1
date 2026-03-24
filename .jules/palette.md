@@ -1,0 +1,3 @@
+## 2024-05-24 - WPF Accessibility for Labels
+**Learning:** In WPF, a simple `TextBlock` before an input doesn't provide enough context for screen readers. Using a `Label` element with `Target="{Binding ElementName=...}"` links them effectively without changing standard visual presentation, provided `Padding="0"` is set to match `TextBlock` defaults. ToolTips and `AutomationProperties.Name` complement this with full keyboard navigation support.
+**Action:** Always prefer `Label` over `TextBlock` for form input descriptions, bind the target correctly, and include `AutomationProperties.Name` and `ToolTip` to progress bars, buttons, and combo boxes.
