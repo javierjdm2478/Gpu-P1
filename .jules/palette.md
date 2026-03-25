@@ -1,0 +1,3 @@
+## 2024-03-25 - Improve Screen Reader Association for Comboboxes
+**Learning:** Using `Label` with `Target` binding instead of a raw `TextBlock` ensures that screen readers properly associate the descriptive text with input fields like `ComboBox` in WPF, and setting `Padding="0"` prevents unintended visual layout shifts when replacing `TextBlock`.
+**Action:** Always prefer `Label` with `Target` binding for labeling input controls over `TextBlock`, and apply `AutomationProperties.Name` and `ToolTip` to interactive elements like buttons, progress bars, and combo boxes.
