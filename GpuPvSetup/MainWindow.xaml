@@ -88,7 +88,8 @@
         <!-- Logs -->
         <Border Grid.Row="4" Background="#252525" CornerRadius="8" Padding="10">
             <ScrollViewer x:Name="LogScrollViewer" VerticalScrollBarVisibility="Auto">
-                <TextBlock x:Name="LogTextBlock" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12" Foreground="#00FF00"/>
+                <!-- ⚡ Bolt: Using TextBox instead of TextBlock for efficient log appending -->
+                <TextBox x:Name="LogTextBox" Background="Transparent" BorderThickness="0" IsReadOnly="True" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12" Foreground="#00FF00"/>
             </ScrollViewer>
         </Border>
     </Grid>
