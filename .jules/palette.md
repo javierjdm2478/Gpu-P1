@@ -1,0 +1,3 @@
+## 2024-05-24 - Accesibilidad en WPF con Label y AutomationProperties
+**Learning:** Para mejorar la accesibilidad con lectores de pantalla en WPF, es importante usar `Label` con un `Target` vinculando los campos de entrada en lugar de un `TextBlock` genérico, previniendo cambios visuales configurando `Padding="0"`. Además, los elementos interactivos como botones, barras de progreso y listas desplegables se benefician enormemente de `AutomationProperties.Name` y `ToolTip`.
+**Action:** Siempre usar `Label` con `Target` para textos de etiqueta y asegurar que todos los controles de entrada y botones tengan atributos `AutomationProperties.Name` y `ToolTip` configurados.
