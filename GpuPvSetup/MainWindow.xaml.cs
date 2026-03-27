@@ -260,9 +260,11 @@ namespace GpuPvSetup
 
                     // Método 2: Usar PowerShell con WMI para consultar la clave del registro del servicio y extraer el ImagePath o usar pnputil
                     // Este es un enfoque mucho más robusto que no depende del módulo PnpDevice, que puede fallar o estar ausente.
+                    // Sanitize WMI data to prevent PowerShell command injection
+                    string safeName = name.Replace("'", "''");
                     string script = $@"
                         $ErrorActionPreference = 'SilentlyContinue'
-                        $gpu = Get-CimInstance Win32_VideoController | Where-Object {{ $_.Name -like '*{name}*' }} | Select-Object -First 1
+                        $gpu = Get-CimInstance Win32_VideoController | Where-Object {{ $_.Name -like '*{safeName}*' }} | Select-Object -First 1
                         if ($gpu) {{
                             $pnpId = $gpu.PNPDeviceID
                             # Escapar los caracteres para regex
