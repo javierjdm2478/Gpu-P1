@@ -1,0 +1,3 @@
+## 2026-03-28 - WPF Accessibility Attributes Addition
+**Learning:** Adding semantic accessibility features in a WPF desktop application (such as `AutomationProperties.Name`, `ToolTip`, and associating text labels using `Label` with `Target` binding instead of standalone `TextBlock`) is crucial for screen readers and improving user interaction clarity without impacting visual layout significantly.
+**Action:** When working on WPF projects, proactively integrate `AutomationProperties` and replace plain descriptive `TextBlock` elements with `Label` bound to input controls (`Target="{Binding ElementName=...}"`). Ensure `Padding="0"` on Labels to maintain visual alignment with old `TextBlock`s.
