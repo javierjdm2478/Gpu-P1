@@ -235,6 +235,9 @@ namespace GpuPvSetup
                 {
                     string name = obj["Name"]?.ToString() ?? string.Empty;
 
+                    // Sanitize name to prevent PowerShell script injection when interpolated inside single quotes.
+                    string safeName = name.Replace("'", "''");
+
                     // Ignorar adaptadores básicos o remotos
                     if (name.Contains("Microsoft Basic", StringComparison.OrdinalIgnoreCase) ||
                         name.Contains("Remote", StringComparison.OrdinalIgnoreCase))
@@ -262,7 +265,7 @@ namespace GpuPvSetup
                     // Este es un enfoque mucho más robusto que no depende del módulo PnpDevice, que puede fallar o estar ausente.
                     string script = $@"
                         $ErrorActionPreference = 'SilentlyContinue'
-                        $gpu = Get-CimInstance Win32_VideoController | Where-Object {{ $_.Name -like '*{name}*' }} | Select-Object -First 1
+                        $gpu = Get-CimInstance Win32_VideoController | Where-Object {{ $_.Name -like '*{safeName}*' }} | Select-Object -First 1
                         if ($gpu) {{
                             $pnpId = $gpu.PNPDeviceID
                             # Escapar los caracteres para regex
