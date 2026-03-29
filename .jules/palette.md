@@ -1,0 +1,3 @@
+## 2024-03-29 - Accessible Labels and Tooltips in WPF
+**Learning:** In WPF, using a `TextBlock` for input field descriptions is not optimal for screen readers. Using a `Label` with a `Target` binding (using `Padding="0"` to prevent visual shifts) significantly improves accessibility. Additionally, adding `AutomationProperties.Name` and `ToolTip` attributes to interactive elements like buttons, progress bars, and combo boxes makes the interface much more accessible and intuitive.
+**Action:** Always prefer `Label` with a `Target` binding for input descriptions over `TextBlock`, and consistently apply `AutomationProperties.Name` and `ToolTip` to all interactive controls.
