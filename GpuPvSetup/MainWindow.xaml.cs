@@ -369,8 +369,10 @@ namespace GpuPvSetup
             // Aseguramos que se ejecute en el hilo de la UI
             Dispatcher.Invoke(() =>
             {
-                LogTextBlock.Text += $"[{DateTime.Now:HH:mm:ss}] {message}\n";
-                LogScrollViewer.ScrollToEnd();
+                // ⚡ BOLT OPTIMIZATION: Usar AppendText() previene asignaciones de memoria O(N^2)
+                // al concatenar strings y reduce bloqueos del hilo de UI.
+                LogTextBlock.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}\n");
+                LogTextBlock.ScrollToEnd();
             });
         }
     }
