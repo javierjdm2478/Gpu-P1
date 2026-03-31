@@ -1,0 +1,3 @@
+## 2024-03-31 - WPF TextBlock String Concatenation Bottleneck
+**Learning:** Concatenating strings to a WPF `TextBlock.Text` property (e.g., `TextBlock.Text += newText`) in a frequent logging scenario causes O(N^2) memory allocations and forces the UI thread to freeze while re-rendering the entire text block, creating a massive performance bottleneck.
+**Action:** For UI logging or frequent text updates, always use `TextBox.AppendText()` with `IsReadOnly="True"`, `Background="Transparent"`, and `BorderThickness="0"` instead. This avoids reallocations and visually mimics a `TextBlock` seamlessly.
