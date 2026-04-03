@@ -7,7 +7,6 @@
 /app/GpuPvSetup/bin/Debug/net10.0-windows/win-x64/GpuPvSetup.runtimeconfig.json
 /app/GpuPvSetup/bin/Debug/net10.0-windows/win-x64/GpuPvSetup.dll
 /app/GpuPvSetup/bin/Debug/net10.0-windows/win-x64/GpuPvSetup.pdb
-/app/GpuPvSetup/bin/Debug/net10.0-windows/win-x64/System.CodeDom.dll
 /app/GpuPvSetup/bin/Debug/net10.0-windows/win-x64/System.Management.dll
 /app/GpuPvSetup/obj/Debug/net10.0-windows/win-x64/GpuPvSetup.csproj.AssemblyReference.cache
 /app/GpuPvSetup/obj/Debug/net10.0-windows/win-x64/MainWindow.baml
