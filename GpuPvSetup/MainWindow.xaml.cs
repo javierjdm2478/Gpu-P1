@@ -295,8 +295,13 @@ namespace GpuPvSetup
             return ("Unknown", string.Empty);
         }
 
-        private void CopyDirectory(string sourceDir, string destinationDir, IProgress<string> progress)
+        private void CopyDirectory(string sourceDir, string destinationDir, IProgress<string> progress, Stopwatch stopwatch = null)
         {
+            if (stopwatch == null)
+            {
+                stopwatch = Stopwatch.StartNew();
+            }
+
             var dir = new DirectoryInfo(sourceDir);
 
             if (!dir.Exists)
@@ -315,17 +320,18 @@ namespace GpuPvSetup
                 file.CopyTo(targetFilePath, true);
                 count++;
 
-                // Actualizar progreso sin saturar la UI (cada 10 archivos)
-                if (count % 10 == 0 || count == totalFiles)
+                // ⚡ Bolt: Throttling de actualizaciones de UI para evitar context switches excesivos (cada ~100ms)
+                if (stopwatch.ElapsedMilliseconds > 100 || count == totalFiles)
                 {
                      progress.Report($"Copiando archivos del driver... ({count}/{totalFiles})");
+                     stopwatch.Restart();
                 }
             }
 
             foreach (DirectoryInfo subDir in dirs)
             {
                 string newDestinationDir = Path.Combine(destinationDir, subDir.Name);
-                CopyDirectory(subDir.FullName, newDestinationDir, progress); // No mostramos sub-progreso para simplificar
+                CopyDirectory(subDir.FullName, newDestinationDir, progress, stopwatch); // No mostramos sub-progreso para simplificar
             }
         }
 
