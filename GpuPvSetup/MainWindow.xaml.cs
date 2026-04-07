@@ -138,8 +138,7 @@ namespace GpuPvSetup
 
                 // 3. Configuración MMIO y Adapter
                 progress.Report("Paso 3: Configurando MMIO y añadiendo VmgpuPartitionAdapter...");
-                RunPowerShellCommand($"Set-VM -Name '{vmName}' -GuestControlledCacheTypes $true -LowMemoryMappedIoSpace 3Gb -HighMemoryMappedIoSpace 33Gb");
-                RunPowerShellCommand($"Add-VMGpuPartitionAdapter -VMName '{vmName}'");
+                RunPowerShellCommand($"Set-VM -Name '{vmName}' -GuestControlledCacheTypes $true -LowMemoryMappedIoSpace 3Gb -HighMemoryMappedIoSpace 33Gb; Add-VMGpuPartitionAdapter -VMName '{vmName}'");
 
                 // 4. Montar VHDX
                 progress.Report("Paso 4: Buscando y montando el disco VHDX...");
@@ -295,8 +294,10 @@ namespace GpuPvSetup
             return ("Unknown", string.Empty);
         }
 
-        private void CopyDirectory(string sourceDir, string destinationDir, IProgress<string> progress)
+        private void CopyDirectory(string sourceDir, string destinationDir, IProgress<string> progress, Stopwatch? throttleTimer = null)
         {
+            if (throttleTimer == null) throttleTimer = Stopwatch.StartNew();
+
             var dir = new DirectoryInfo(sourceDir);
 
             if (!dir.Exists)
@@ -315,17 +316,18 @@ namespace GpuPvSetup
                 file.CopyTo(targetFilePath, true);
                 count++;
 
-                // Actualizar progreso sin saturar la UI (cada 10 archivos)
-                if (count % 10 == 0 || count == totalFiles)
+                // Throttle progress updates to ~100ms to avoid UI thread context switch overhead
+                if (throttleTimer.ElapsedMilliseconds > 100 || count == totalFiles)
                 {
                      progress.Report($"Copiando archivos del driver... ({count}/{totalFiles})");
+                     throttleTimer.Restart();
                 }
             }
 
             foreach (DirectoryInfo subDir in dirs)
             {
                 string newDestinationDir = Path.Combine(destinationDir, subDir.Name);
-                CopyDirectory(subDir.FullName, newDestinationDir, progress); // No mostramos sub-progreso para simplificar
+                CopyDirectory(subDir.FullName, newDestinationDir, progress, throttleTimer);
             }
         }
 
