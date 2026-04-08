@@ -1,0 +1,3 @@
+## 2026-04-08 - WPF TextBox vs TextBlock O(N^2) Memory Allocation
+**Learning:** In WPF, concatenating strings to a `TextBlock.Text` property (e.g., `LogTextBlock.Text += msg`) causes O(N^2) memory allocations due to strings being immutable and WPF having to re-parse the entire string for rendering on every update, which creates massive lag as logs grow.
+**Action:** Use `TextBox.AppendText()` combined with `Background="Transparent"`, `BorderThickness="0"`, and `IsReadOnly="True"` to visually mimic a `TextBlock` while achieving O(1) appending and avoiding UI thread blocking on frequent log updates.
