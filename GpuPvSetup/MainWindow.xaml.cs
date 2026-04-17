@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -74,7 +74,7 @@ namespace GpuPvSetup
             RefreshVmButton.IsEnabled = false;
             VmComboBox.IsEnabled = false;
             ActionProgressBar.IsIndeterminate = true;
-            LogTextBlock.Text = "";
+            LogTextBox.Clear();
 
             // Creamos un objeto para reportar el progreso desde el hilo secundario
             var progress = new Progress<string>(message =>
@@ -369,7 +369,9 @@ namespace GpuPvSetup
             // Aseguramos que se ejecute en el hilo de la UI
             Dispatcher.Invoke(() =>
             {
-                LogTextBlock.Text += $"[{DateTime.Now:HH:mm:ss}] {message}\n";
+                // ⚡ Bolt Performance Optimization: Utiliza TextBox.AppendText en lugar de concatenación
+                // de TextBlock.Text (+=) para prevenir asignaciones de memoria O(N^2) durante actualizaciones frecuentes.
+                LogTextBox.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}\n");
                 LogScrollViewer.ScrollToEnd();
             });
         }
