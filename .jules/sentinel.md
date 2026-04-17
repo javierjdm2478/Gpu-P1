@@ -2,3 +2,8 @@
 **Vulnerability:** The application was passing dynamic PowerShell commands to `powershell.exe` by constructing the `-Command` string using string interpolation. It was also embedding unsanitized user inputs (`vmName` and OS-retrieved `vhdxPath`) into these PowerShell scripts wrapped in single quotes (`'`). Both practices allowed for arbitrary PowerShell code injection if the strings contained `"` or `'`.
 **Learning:** Using `Arguments = $"-Command \"{command}\""` for `ProcessStartInfo` is unsafe and susceptible to injection via double quotes. Embedding string variables inside PowerShell scripts surrounded by single quotes is also unsafe if the variables contain a single quote, which breaks out of the string context.
 **Prevention:** Always use `ProcessStartInfo.ArgumentList` to securely pass command-line arguments to processes like `powershell.exe`. When dynamically embedding strings into a PowerShell script wrapped in single quotes, always escape the input by doubling single quotes (`input.Replace("'", "''")`).
+
+## 2025-03-18 - WMI Data Command Injection
+**Vulnerability:** The application was retrieving the GPU name using WMI (`Win32_VideoController`), assuming the string was safe, and then interpolating it directly into a PowerShell script wrapped in single quotes (`'*{name}*'`). If the WMI property contained a single quote (`'`), it could lead to arbitrary code execution in the context of the PowerShell session.
+**Learning:** Data sourced from external systems like WMI, even locally, is untrusted and should not be concatenated directly into scripts.
+**Prevention:** Always sanitize strings (e.g., `name.Replace("'", "''")`) when embedding them in PowerShell script blocks wrapped in single quotes, regardless of the source of the data.
