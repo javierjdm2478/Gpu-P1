@@ -1,0 +1,12 @@
+367:        private void LogMessage(string message)
+368-        {
+369-            // Aseguramos que se ejecute en el hilo de la UI
+370-            Dispatcher.Invoke(() =>
+371-            {
+372-                LogTextBlock.Text += $"[{DateTime.Now:HH:mm:ss}] {message}\n";
+373-                LogScrollViewer.ScrollToEnd();
+374-            });
+375-        }
+376-    }
+377-}
+92:                <TextBlock x:Name="LogTextBlock" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12" Foreground="#00FF00"/>
