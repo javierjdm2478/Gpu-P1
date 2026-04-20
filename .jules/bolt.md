@@ -1,0 +1,3 @@
+## 2025-04-20 - O(N^2) UI Locking via String Concatenation in Logs
+**Learning:** In WPF, repeatedly concatenating strings using `TextBlock.Text += "..."` for logging causes O(N^2) memory allocations and string copies. Because this happens on the UI thread (`Dispatcher.Invoke`), it severely blocks the main thread during long-running tasks that output frequent progress updates. Additionally, `TextBlock` text cannot be selected/copied by users easily.
+**Action:** Replace `TextBlock` with `TextBox` for logs and use `.AppendText()`. To seamlessly match the previous look, set `Background="Transparent"`, `BorderThickness="0"`, and `IsReadOnly="True"`. Apply `AutomationProperties.Name` and `ToolTip` for accessibility.
