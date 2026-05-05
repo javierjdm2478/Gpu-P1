@@ -1,0 +1,3 @@
+## 2024-05-18 - UI Logging & Progress Throttling Optimizations
+**Learning:** In WPF, appending to a TextBlock with `+=` causes O(N^2) memory allocations which heavily impacts performance during extensive logging. Additionally, reporting progress too frequently during recursive file operations (e.g., driver copying) causes excessive UI thread context switches.
+**Action:** Use `TextBox.AppendText()` for UI logs instead of string concatenation to optimize memory allocations. Throttle `IProgress<string>.Report` updates using a `Stopwatch` (e.g., ~100ms threshold) to reduce main thread blocking and context switching during tight loops.
