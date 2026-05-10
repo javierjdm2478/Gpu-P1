@@ -1,0 +1,43 @@
+
+Welcome to .NET 10.0!
+---------------------
+SDK Version: 10.0.103
+
+----------------
+Installed an ASP.NET Core HTTPS development certificate.
+To trust the certificate, run 'dotnet dev-certs https --trust'
+Learn about HTTPS: https://aka.ms/dotnet-https
+
+----------------
+Write your first app: https://aka.ms/dotnet-hello-world
+Find out what's new: https://aka.ms/dotnet-whats-new
+Explore documentation: https://aka.ms/dotnet-docs
+Report issues and find source on GitHub: https://github.com/dotnet/core
+Use 'dotnet --help' to see available commands or visit: https://aka.ms/dotnet-cli
+--------------------------------------------------------------------------------------
+  Determining projects to restore...
+  Restored /app/GpuPvSetup/GpuPvSetup.csproj (in 2.88 sec).
+/app/GpuPvSetup/MainWindow.xaml.cs(17,13): warning CS4014: Because this call is not awaited, execution of the current method continues before the call is completed. Consider applying the 'await' operator to the result of the call. [/app/GpuPvSetup/GpuPvSetup_q3th22jq_wpftmp.csproj]
+/app/GpuPvSetup/MainWindow.xaml.cs(145,35): warning CS8600: Converting null literal or possible null value to non-nullable type. [/app/GpuPvSetup/GpuPvSetup_q3th22jq_wpftmp.csproj]
+/app/GpuPvSetup/MainWindow.xaml.cs(207,39): warning CS8600: Converting null literal or possible null value to non-nullable type. [/app/GpuPvSetup/GpuPvSetup_q3th22jq_wpftmp.csproj]
+/app/GpuPvSetup/MainWindow.xaml.cs(250,46): warning CS8600: Converting null literal or possible null value to non-nullable type. [/app/GpuPvSetup/GpuPvSetup_q3th22jq_wpftmp.csproj]
+/app/GpuPvSetup/MainWindow.xaml.cs(17,13): warning CS4014: Because this call is not awaited, execution of the current method continues before the call is completed. Consider applying the 'await' operator to the result of the call. [/app/GpuPvSetup/GpuPvSetup.csproj]
+/app/GpuPvSetup/MainWindow.xaml.cs(145,35): warning CS8600: Converting null literal or possible null value to non-nullable type. [/app/GpuPvSetup/GpuPvSetup.csproj]
+/app/GpuPvSetup/MainWindow.xaml.cs(207,39): warning CS8600: Converting null literal or possible null value to non-nullable type. [/app/GpuPvSetup/GpuPvSetup.csproj]
+/app/GpuPvSetup/MainWindow.xaml.cs(250,46): warning CS8600: Converting null literal or possible null value to non-nullable type. [/app/GpuPvSetup/GpuPvSetup.csproj]
+  GpuPvSetup -> /app/GpuPvSetup/bin/Debug/net10.0-windows/win-x64/GpuPvSetup.dll
+
+Build succeeded.
+
+/app/GpuPvSetup/MainWindow.xaml.cs(17,13): warning CS4014: Because this call is not awaited, execution of the current method continues before the call is completed. Consider applying the 'await' operator to the result of the call. [/app/GpuPvSetup/GpuPvSetup_q3th22jq_wpftmp.csproj]
+/app/GpuPvSetup/MainWindow.xaml.cs(145,35): warning CS8600: Converting null literal or possible null value to non-nullable type. [/app/GpuPvSetup/GpuPvSetup_q3th22jq_wpftmp.csproj]
+/app/GpuPvSetup/MainWindow.xaml.cs(207,39): warning CS8600: Converting null literal or possible null value to non-nullable type. [/app/GpuPvSetup/GpuPvSetup_q3th22jq_wpftmp.csproj]
+/app/GpuPvSetup/MainWindow.xaml.cs(250,46): warning CS8600: Converting null literal or possible null value to non-nullable type. [/app/GpuPvSetup/GpuPvSetup_q3th22jq_wpftmp.csproj]
+/app/GpuPvSetup/MainWindow.xaml.cs(17,13): warning CS4014: Because this call is not awaited, execution of the current method continues before the call is completed. Consider applying the 'await' operator to the result of the call. [/app/GpuPvSetup/GpuPvSetup.csproj]
+/app/GpuPvSetup/MainWindow.xaml.cs(145,35): warning CS8600: Converting null literal or possible null value to non-nullable type. [/app/GpuPvSetup/GpuPvSetup.csproj]
+/app/GpuPvSetup/MainWindow.xaml.cs(207,39): warning CS8600: Converting null literal or possible null value to non-nullable type. [/app/GpuPvSetup/GpuPvSetup.csproj]
+/app/GpuPvSetup/MainWindow.xaml.cs(250,46): warning CS8600: Converting null literal or possible null value to non-nullable type. [/app/GpuPvSetup/GpuPvSetup.csproj]
+    8 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:16.12
