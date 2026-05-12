@@ -1,0 +1,3 @@
+## 2024-05-12 - Optimize UI Logging in WPF
+**Learning:** Using string concatenation (`+=`) on `TextBlock.Text` for frequent UI logging creates an O(N^2) memory allocation pattern and forces the layout engine to completely recreate the text visual tree, leading to severe UI thread blockages and increased memory pressure as the log grows.
+**Action:** Always use `TextBox.AppendText()` for frequently updated text logs in WPF. Configure the `TextBox` with `IsReadOnly="True"`, `Background="Transparent"`, and `BorderThickness="0"` to mimic the visual appearance of a `TextBlock` while getting the performance benefits of optimized text appending.
