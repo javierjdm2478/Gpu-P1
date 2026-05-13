@@ -260,31 +260,33 @@ namespace GpuPvSetup
 
                     // Método 2: Usar PowerShell con WMI para consultar la clave del registro del servicio y extraer el ImagePath o usar pnputil
                     // Este es un enfoque mucho más robusto que no depende del módulo PnpDevice, que puede fallar o estar ausente.
-                    string script = $@"
+                    var gpuEnvVars = new Dictionary<string, string> { { "GPU_NAME", name } };
+                    string script = @"
                         $ErrorActionPreference = 'SilentlyContinue'
-                        $gpu = Get-CimInstance Win32_VideoController | Where-Object {{ $_.Name -like '*{name}*' }} | Select-Object -First 1
-                        if ($gpu) {{
+                        $gpuName = '*' + $env:GPU_NAME + '*'
+                        $gpu = Get-CimInstance Win32_VideoController | Where-Object { $_.Name -like $gpuName } | Select-Object -First 1
+                        if ($gpu) {
                             $pnpId = $gpu.PNPDeviceID
                             # Escapar los caracteres para regex
                             $escapedPnpId = [regex]::Escape($pnpId)
                             # Buscar en pnputil el nombre original del INF (oemXX.inf)
                             $pnpOut = pnputil /enum-devices /instanceid ""$pnpId""
                             $infLine = $pnpOut | Select-String -Pattern 'Published Name:|Nombre publicado:' | Select-Object -First 1
-                            if ($infLine) {{
+                            if ($infLine) {
                                 $infName = ($infLine -split ':')[1].Trim()
-                                if ($infName) {{
+                                if ($infName) {
                                     $driverStore = 'C:\Windows\System32\DriverStore\FileRepository'
                                     # Buscar la carpeta que contiene el inf publicado
                                     $folders = Get-ChildItem -Path $driverStore -Directory -Filter ""$($infName.Split('.')[0])*""
-                                    if ($folders) {{
+                                    if ($folders) {
                                         $folders[0].FullName
-                                    }}
-                                }}
-                            }}
-                        }}
+                                    }
+                                }
+                            }
+                        }
                     ";
 
-                    string driverPath = RunPowerShellCommand(script).Trim();
+                    string driverPath = RunPowerShellCommand(script, gpuEnvVars).Trim();
 
                     if (!string.IsNullOrEmpty(driverPath) && Directory.Exists(driverPath))
                     {
@@ -329,7 +331,7 @@ namespace GpuPvSetup
             }
         }
 
-        private string RunPowerShellCommand(string command)
+        private string RunPowerShellCommand(string command, IDictionary<string, string>? envVars = null)
         {
             var startInfo = new ProcessStartInfo
             {
@@ -339,6 +341,14 @@ namespace GpuPvSetup
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
+
+            if (envVars != null)
+            {
+                foreach (var kvp in envVars)
+                {
+                    startInfo.EnvironmentVariables[kvp.Key] = kvp.Value;
+                }
+            }
 
             startInfo.ArgumentList.Add("-NoProfile");
             startInfo.ArgumentList.Add("-ExecutionPolicy");
