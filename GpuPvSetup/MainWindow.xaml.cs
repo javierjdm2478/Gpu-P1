@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -14,7 +14,8 @@ namespace GpuPvSetup
         public MainWindow()
         {
             InitializeComponent();
-            LoadVirtualMachines();
+            // Fire and forget
+            _ = LoadVirtualMachines();
         }
 
         private async void RefreshVmButton_Click(object sender, RoutedEventArgs e)
@@ -74,7 +75,7 @@ namespace GpuPvSetup
             RefreshVmButton.IsEnabled = false;
             VmComboBox.IsEnabled = false;
             ActionProgressBar.IsIndeterminate = true;
-            LogTextBlock.Text = "";
+            LogTextBlock.Clear();
 
             // Creamos un objeto para reportar el progreso desde el hilo secundario
             var progress = new Progress<string>(message =>
@@ -112,6 +113,7 @@ namespace GpuPvSetup
 
             bool wasVmRunning = false;
             string mountPath = string.Empty;
+            string cachedVhdxPath = string.Empty;
 
             try
             {
@@ -143,7 +145,8 @@ namespace GpuPvSetup
 
                 // 4. Montar VHDX
                 progress.Report("Paso 4: Buscando y montando el disco VHDX...");
-                string vhdxPath = RunPowerShellCommand($"(Get-VMHardDiskDrive -VMName '{vmName}').Path").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
+                string vhdxPath = GetVmVhdxPath(vmName);
+                cachedVhdxPath = vhdxPath;
 
                 if (string.IsNullOrEmpty(vhdxPath) || !File.Exists(vhdxPath))
                     throw new Exception($"No se encontró un archivo VHDX válido para la VM en la ruta: {vhdxPath}");
@@ -206,10 +209,9 @@ namespace GpuPvSetup
                 if (!string.IsNullOrEmpty(mountPath))
                 {
                     progress.Report("Desmontando VHDX de forma segura...");
-                    string vhdxPath = RunPowerShellCommand($"(Get-VMHardDiskDrive -VMName '{vmName}').Path").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
-                    if (!string.IsNullOrEmpty(vhdxPath))
+                    if (!string.IsNullOrEmpty(cachedVhdxPath))
                     {
-                         string safeVhdxPath = vhdxPath.Replace("'", "''");
+                         string safeVhdxPath = cachedVhdxPath.Replace("'", "''");
                          RunPowerShellCommand($"Dismount-VHD -Path '{safeVhdxPath}'");
                          progress.Report("VHDX desmontado.");
                     }
@@ -249,7 +251,7 @@ namespace GpuPvSetup
                         {
                             if (path.Contains(@"DriverStore\FileRepository", StringComparison.OrdinalIgnoreCase))
                             {
-                                string dir = Path.GetDirectoryName(path);
+                                string? dir = Path.GetDirectoryName(path);
                                 if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
                                 {
                                     return (name, dir);
@@ -329,6 +331,13 @@ namespace GpuPvSetup
             }
         }
 
+
+        private string GetVmVhdxPath(string vmName)
+        {
+            string command = $"(Get-VMHardDiskDrive -VMName '{vmName.Replace("'", "''")}').Path";
+            return RunPowerShellCommand(command).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim() ?? string.Empty;
+        }
+
         private string RunPowerShellCommand(string command)
         {
             var startInfo = new ProcessStartInfo
@@ -369,8 +378,8 @@ namespace GpuPvSetup
             // Aseguramos que se ejecute en el hilo de la UI
             Dispatcher.Invoke(() =>
             {
-                LogTextBlock.Text += $"[{DateTime.Now:HH:mm:ss}] {message}\n";
-                LogScrollViewer.ScrollToEnd();
+                LogTextBlock.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}\n");
+                LogTextBlock.ScrollToEnd();
             });
         }
     }
