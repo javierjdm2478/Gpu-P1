@@ -88,9 +88,17 @@
 
         <!-- Logs -->
         <Border Grid.Row="4" Background="#252525" CornerRadius="8" Padding="10">
-            <ScrollViewer x:Name="LogScrollViewer" VerticalScrollBarVisibility="Auto">
-                <TextBlock x:Name="LogTextBlock" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12" Foreground="#00FF00"/>
-            </ScrollViewer>
+            <TextBox x:Name="LogTextBox"
+                     IsReadOnly="True"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     TextWrapping="Wrap"
+                     VerticalScrollBarVisibility="Auto"
+                     AutomationProperties.Name="Registro de eventos"
+                     ToolTip="Muestra los registros y progreso de las operaciones. Puedes seleccionar y copiar este texto."
+                     FontFamily="Consolas"
+                     FontSize="12"
+                     Foreground="#00FF00"/>
         </Border>
     </Grid>
 </Window>
