@@ -1,0 +1,3 @@
+## 2025-02-24 - Replace TextBlock string concatenation with TextBox AppendText for efficient logging
+**Learning:** For WPF UI logging with frequent text updates, using `TextBlock.Text +=` results in O(N^2) memory allocations because strings are immutable and reallocated on every append.
+**Action:** Always use `TextBox.AppendText()` with `IsReadOnly="True"` instead of `TextBlock` concatenation for log views. This prevents memory spikes, allows text selection/copying natively, and behaves identically visually when styling attributes like `Background="Transparent"` and `BorderThickness="0"` are applied.
