@@ -112,6 +112,7 @@ namespace GpuPvSetup
 
             bool wasVmRunning = false;
             string mountPath = string.Empty;
+            string cachedVhdxPath = string.Empty;
 
             try
             {
@@ -143,15 +144,15 @@ namespace GpuPvSetup
 
                 // 4. Montar VHDX
                 progress.Report("Paso 4: Buscando y montando el disco VHDX...");
-                string vhdxPath = RunPowerShellCommand($"(Get-VMHardDiskDrive -VMName '{vmName}').Path").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
+                cachedVhdxPath = RunPowerShellCommand($"(Get-VMHardDiskDrive -VMName '{vmName}').Path").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
 
-                if (string.IsNullOrEmpty(vhdxPath) || !File.Exists(vhdxPath))
-                    throw new Exception($"No se encontró un archivo VHDX válido para la VM en la ruta: {vhdxPath}");
+                if (string.IsNullOrEmpty(cachedVhdxPath) || !File.Exists(cachedVhdxPath))
+                    throw new Exception($"No se encontró un archivo VHDX válido para la VM en la ruta: {cachedVhdxPath}");
 
                 // Sanitize vhdxPath for interpolation inside single quotes
-                string safeVhdxPath = vhdxPath.Replace("'", "''");
+                string safeVhdxPath = cachedVhdxPath.Replace("'", "''");
 
-                progress.Report($"Montando VHDX: {vhdxPath}");
+                progress.Report($"Montando VHDX: {cachedVhdxPath}");
                 // Mount-VHD y obtención de la letra de la partición de Windows (suele ser la de mayor tamaño)
                 string scriptMount = $@"
                     $vhd = Mount-VHD -Path '{safeVhdxPath}' -PassThru
@@ -206,10 +207,12 @@ namespace GpuPvSetup
                 if (!string.IsNullOrEmpty(mountPath))
                 {
                     progress.Report("Desmontando VHDX de forma segura...");
-                    string vhdxPath = RunPowerShellCommand($"(Get-VMHardDiskDrive -VMName '{vmName}').Path").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
-                    if (!string.IsNullOrEmpty(vhdxPath))
+                    // ⚡ Bolt Performance Optimization:
+                    // Using the cached VHDX path instead of querying it again via PowerShell.
+                    // This eliminates a redundant process creation and makes cleanup noticeably faster.
+                    if (!string.IsNullOrEmpty(cachedVhdxPath))
                     {
-                         string safeVhdxPath = vhdxPath.Replace("'", "''");
+                         string safeVhdxPath = cachedVhdxPath.Replace("'", "''");
                          RunPowerShellCommand($"Dismount-VHD -Path '{safeVhdxPath}'");
                          progress.Report("VHDX desmontado.");
                     }
