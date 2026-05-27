@@ -45,12 +45,6 @@
         "net10.0-windows7.0": {
           "targetAlias": "net10.0-windows",
           "dependencies": {
-            "Microsoft.NET.ILLink.Tasks": {
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[10.0.0, )",
-              "autoReferenced": true
-            },
             "System.Management": {
               "target": "Package",
               "version": "[10.0.3, )"
@@ -70,11 +64,11 @@
           "downloadDependencies": [
             {
               "name": "Microsoft.NETCore.App.Host.win-x64",
-              "version": "[10.0.0, 10.0.0]"
+              "version": "[10.0.3, 10.0.3]"
             },
             {
               "name": "Microsoft.WindowsDesktop.App.Ref",
-              "version": "[10.0.0, 10.0.0]"
+              "version": "[10.0.3, 10.0.3]"
             }
           ],
           "frameworkReferences": {
@@ -85,7 +79,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/10.0.100/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/10.0.103/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.CSharp": "(,4.7.32767]",
             "Microsoft.VisualBasic": "(,10.4.32767]",
