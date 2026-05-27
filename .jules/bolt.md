@@ -1,0 +1,3 @@
+## 2025-05-27 - Optimize WPF UI logging and progress throttling
+**Learning:** String concatenation (`+=`) on a WPF `TextBlock` for continuous log streaming causes O(N^2) memory allocations and triggers heavy UI layouts. Furthermore, updating UI progress counters based purely on iteration counts (e.g., `count % 10 == 0`) can still flood the Dispatcher when processing many small files rapidly.
+**Action:** Replace `TextBlock` with a read-only `TextBox` and use `.AppendText()` for efficient, native scroll-enabled logging. Apply time-based throttling (e.g., `Stopwatch.ElapsedMilliseconds > 100`) for high-frequency progress updates to significantly reduce UI thread dispatch overhead without sacrificing responsiveness.
