@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -14,7 +14,8 @@ namespace GpuPvSetup
         public MainWindow()
         {
             InitializeComponent();
-            LoadVirtualMachines();
+            // ⚡ Bolt: Usamos discard para no bloquear el hilo de UI y silenciar la advertencia CS4014
+            _ = LoadVirtualMachines();
         }
 
         private async void RefreshVmButton_Click(object sender, RoutedEventArgs e)
@@ -74,7 +75,7 @@ namespace GpuPvSetup
             RefreshVmButton.IsEnabled = false;
             VmComboBox.IsEnabled = false;
             ActionProgressBar.IsIndeterminate = true;
-            LogTextBlock.Text = "";
+            LogTextBox.Clear();
 
             // Creamos un objeto para reportar el progreso desde el hilo secundario
             var progress = new Progress<string>(message =>
@@ -367,10 +368,11 @@ namespace GpuPvSetup
         private void LogMessage(string message)
         {
             // Aseguramos que se ejecute en el hilo de la UI
+            // ⚡ Bolt: Usamos AppendText en lugar de concatenar cadenas para evitar reasignaciones O(N^2)
             Dispatcher.Invoke(() =>
             {
-                LogTextBlock.Text += $"[{DateTime.Now:HH:mm:ss}] {message}\n";
-                LogScrollViewer.ScrollToEnd();
+                LogTextBox.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}\n");
+                LogTextBox.ScrollToEnd();
             });
         }
     }
