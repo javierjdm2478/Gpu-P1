@@ -1,0 +1,18 @@
+  Determining projects to restore...
+  Restored /app/GpuPvSetup/GpuPvSetup.csproj (in 547 ms).
+/app/GpuPvSetup/MainWindow.xaml.cs(17,13): warning CS4014: Because this call is not awaited, execution of the current method continues before the call is completed. Consider applying the 'await' operator to the result of the call. [/app/GpuPvSetup/GpuPvSetup_0gazd2qy_wpftmp.csproj]
+/app/GpuPvSetup/MainWindow.xaml.cs(249,46): warning CS8600: Converting null literal or possible null value to non-nullable type. [/app/GpuPvSetup/GpuPvSetup_0gazd2qy_wpftmp.csproj]
+/app/GpuPvSetup/MainWindow.xaml.cs(17,13): warning CS4014: Because this call is not awaited, execution of the current method continues before the call is completed. Consider applying the 'await' operator to the result of the call. [/app/GpuPvSetup/GpuPvSetup.csproj]
+/app/GpuPvSetup/MainWindow.xaml.cs(249,46): warning CS8600: Converting null literal or possible null value to non-nullable type. [/app/GpuPvSetup/GpuPvSetup.csproj]
+  GpuPvSetup -> /app/GpuPvSetup/bin/Debug/net10.0-windows/win-x64/GpuPvSetup.dll
+
+Build succeeded.
+
+/app/GpuPvSetup/MainWindow.xaml.cs(17,13): warning CS4014: Because this call is not awaited, execution of the current method continues before the call is completed. Consider applying the 'await' operator to the result of the call. [/app/GpuPvSetup/GpuPvSetup_0gazd2qy_wpftmp.csproj]
+/app/GpuPvSetup/MainWindow.xaml.cs(249,46): warning CS8600: Converting null literal or possible null value to non-nullable type. [/app/GpuPvSetup/GpuPvSetup_0gazd2qy_wpftmp.csproj]
+/app/GpuPvSetup/MainWindow.xaml.cs(17,13): warning CS4014: Because this call is not awaited, execution of the current method continues before the call is completed. Consider applying the 'await' operator to the result of the call. [/app/GpuPvSetup/GpuPvSetup.csproj]
+/app/GpuPvSetup/MainWindow.xaml.cs(249,46): warning CS8600: Converting null literal or possible null value to non-nullable type. [/app/GpuPvSetup/GpuPvSetup.csproj]
+    4 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:04.18
