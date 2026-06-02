@@ -1,0 +1,3 @@
+## 2024-06-02 - UI Logging Performance Fix
+**Learning:** In WPF, appending text to a `TextBlock` using string concatenation (`+=`) in a tight loop or during frequent progress updates triggers complete re-allocations of the string and layout passes, scaling at O(N^2) memory allocations and severely bottlenecking the UI thread.
+**Action:** Always use `TextBox.AppendText()` instead of `TextBlock.Text +=` for frequent UI logging updates. Ensure the `TextBox` is styled identically to a `TextBlock` (`IsReadOnly="True"`, `Background="Transparent"`, `BorderThickness="0"`, `TextWrapping="Wrap"`, `VerticalScrollBarVisibility="Auto"`) and remove redundant outer `ScrollViewer` containers since `TextBox` handles scrolling natively via `ScrollToEnd()`.
