@@ -1,0 +1,3 @@
+## 2024-06-03 - Avoid WPF TextBlock String Concatenation for Logging
+**Learning:** Using `TextBlock.Text +=` for continuous logging in WPF creates an O(N^2) memory allocation complexity. This is because strings in C# are immutable, so every append creates a new, larger string in memory, leading to performance degradation and high memory pressure over time.
+**Action:** For UI text logs that update frequently, always replace `TextBlock` (inside a `ScrollViewer`) with a `TextBox` configured to look like a `TextBlock` (`IsReadOnly="True"`, `Background="Transparent"`, `BorderThickness="0"`). This allows using `TextBox.AppendText()` and `TextBox.Clear()`, which use native text buffers and handle appends efficiently without excessive memory allocations.
