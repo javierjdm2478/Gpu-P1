@@ -1,3 +1,6 @@
 ## 2024-03-30 - WPF Accessibility Enhancements
 **Learning:** TextBlock elements used as labels in WPF are not accessible to screen readers, and interactive elements need AutomationProperties.Name and ToolTips.
 **Action:** Replace TextBlocks functioning as labels with `<Label Target="{Binding ElementName=...}" Padding="0"/>` to maintain visual layout while adding screen reader support, and consistently add `AutomationProperties.Name` and `ToolTip` to inputs, buttons, and progress bars.
+## 2024-03-30 - Update UI logging memory allocation
+**Learning:** In WPF, when frequently appending text to a UI component (like a log viewer), appending directly to a `TextBlock.Text` via `+=` causes O(N^2) memory allocations. A `TextBox` with `AppendText()` is much more performant. For the user, a `TextBox` with `IsReadOnly="True"` mimics a `TextBlock` while providing text selection/copying. This was poorly implemented in the initial code, causing potential sluggishness.
+**Action:** Replace `TextBlock` within `ScrollViewer` with a `TextBox` when displaying frequent, long textual updates to improve performance and allow user selection. Make sure to set `IsReadOnly="True"`, `Background="Transparent"`, `BorderThickness="0"`, `TextWrapping="Wrap"`, and `VerticalScrollBarVisibility="Auto"` to retain visual style.
