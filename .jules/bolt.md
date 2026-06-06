@@ -1,0 +1,3 @@
+## 2025-06-06 - Evitar TextBlock y String Concatenation en Logs de WPF
+**Learning:** El uso de `TextBlock.Text += "..."` para registros (logs) que se actualizan frecuentemente causa asignaciones de memoria cuadráticas (O(N²)), lo que degrada drásticamente el rendimiento y la capacidad de respuesta de la UI a medida que el registro crece.
+**Action:** Usar un control `TextBox` en modo `IsReadOnly="True"` y emplear su método `AppendText()`, el cual proporciona un rendimiento de agregación en tiempo O(1) amortizado y maneja eficientemente operaciones de texto extenso. Además, usar `Clear()` en lugar de asignar una cadena vacía.
