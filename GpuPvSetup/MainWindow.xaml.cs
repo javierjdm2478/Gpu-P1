@@ -107,9 +107,7 @@ namespace GpuPvSetup
 
         private void ConfigureGpuPvAsync(string vmName, IProgress<string> progress)
         {
-            // Sanitize vmName to prevent PowerShell script injection when interpolated inside single quotes.
-            vmName = vmName.Replace("'", "''");
-
+            var env = new Dictionary<string, string> { { "TARGET_VM", vmName } };
             bool wasVmRunning = false;
             string mountPath = string.Empty;
 
@@ -126,39 +124,38 @@ namespace GpuPvSetup
 
                 // 2. Gestionar estado de la VM (Apagar si está encendida)
                 progress.Report("Paso 2: Comprobando estado de la VM...");
-                string vmState = RunPowerShellCommand($"Get-VM -Name '{vmName}' | Select-Object -ExpandProperty State").Trim();
+                string vmState = RunPowerShellCommand("Get-VM -Name $env:TARGET_VM | Select-Object -ExpandProperty State", env).Trim();
 
                 if (vmState.Equals("Running", StringComparison.OrdinalIgnoreCase))
                 {
                     wasVmRunning = true;
                     progress.Report($"La VM '{vmName}' está encendida. Apagando suavemente...");
-                    RunPowerShellCommand($"Stop-VM -Name '{vmName}' -Force");
+                    RunPowerShellCommand("Stop-VM -Name $env:TARGET_VM -Force", env);
                     progress.Report("VM apagada.");
                 }
 
                 // 3. Configuración MMIO y Adapter
                 progress.Report("Paso 3: Configurando MMIO y añadiendo VmgpuPartitionAdapter...");
-                RunPowerShellCommand($"Set-VM -Name '{vmName}' -GuestControlledCacheTypes $true -LowMemoryMappedIoSpace 3Gb -HighMemoryMappedIoSpace 33Gb");
-                RunPowerShellCommand($"Add-VMGpuPartitionAdapter -VMName '{vmName}'");
+                RunPowerShellCommand("Set-VM -Name $env:TARGET_VM -GuestControlledCacheTypes $true -LowMemoryMappedIoSpace 3Gb -HighMemoryMappedIoSpace 33Gb", env);
+                RunPowerShellCommand("Add-VMGpuPartitionAdapter -VMName $env:TARGET_VM", env);
 
                 // 4. Montar VHDX
                 progress.Report("Paso 4: Buscando y montando el disco VHDX...");
-                string vhdxPath = RunPowerShellCommand($"(Get-VMHardDiskDrive -VMName '{vmName}').Path").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
+                string vhdxPath = RunPowerShellCommand("(Get-VMHardDiskDrive -VMName $env:TARGET_VM).Path", env).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
 
                 if (string.IsNullOrEmpty(vhdxPath) || !File.Exists(vhdxPath))
                     throw new Exception($"No se encontró un archivo VHDX válido para la VM en la ruta: {vhdxPath}");
 
-                // Sanitize vhdxPath for interpolation inside single quotes
-                string safeVhdxPath = vhdxPath.Replace("'", "''");
+                env["TARGET_VHDX"] = vhdxPath;
 
                 progress.Report($"Montando VHDX: {vhdxPath}");
                 // Mount-VHD y obtención de la letra de la partición de Windows (suele ser la de mayor tamaño)
-                string scriptMount = $@"
-                    $vhd = Mount-VHD -Path '{safeVhdxPath}' -PassThru
-                    $vol = Get-Disk -Number $vhd.DiskNumber | Get-Partition | Get-Volume | Where-Object {{ $_.DriveLetter }} | Sort-Object Size -Descending | Select-Object -First 1
+                string scriptMount = @"
+                    $vhd = Mount-VHD -Path $env:TARGET_VHDX -PassThru
+                    $vol = Get-Disk -Number $vhd.DiskNumber | Get-Partition | Get-Volume | Where-Object { $_.DriveLetter } | Sort-Object Size -Descending | Select-Object -First 1
                     $vol.DriveLetter
                 ";
-                string driveLetter = RunPowerShellCommand(scriptMount).Trim();
+                string driveLetter = RunPowerShellCommand(scriptMount, env).Trim();
 
                 if (string.IsNullOrEmpty(driveLetter))
                     throw new Exception("No se pudo obtener la letra de la unidad montada del VHDX.");
@@ -206,11 +203,11 @@ namespace GpuPvSetup
                 if (!string.IsNullOrEmpty(mountPath))
                 {
                     progress.Report("Desmontando VHDX de forma segura...");
-                    string vhdxPath = RunPowerShellCommand($"(Get-VMHardDiskDrive -VMName '{vmName}').Path").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
-                    if (!string.IsNullOrEmpty(vhdxPath))
+                    string vhdxPathClean = RunPowerShellCommand("(Get-VMHardDiskDrive -VMName $env:TARGET_VM).Path", env).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
+                    if (!string.IsNullOrEmpty(vhdxPathClean))
                     {
-                         string safeVhdxPath = vhdxPath.Replace("'", "''");
-                         RunPowerShellCommand($"Dismount-VHD -Path '{safeVhdxPath}'");
+                         env["TARGET_VHDX_CLEAN"] = vhdxPathClean;
+                         RunPowerShellCommand("Dismount-VHD -Path $env:TARGET_VHDX_CLEAN", env);
                          progress.Report("VHDX desmontado.");
                     }
                 }
@@ -218,7 +215,7 @@ namespace GpuPvSetup
                 if (wasVmRunning)
                 {
                     progress.Report($"Reiniciando la VM '{vmName}' automáticamente...");
-                    RunPowerShellCommand($"Start-VM -Name '{vmName}'");
+                    RunPowerShellCommand("Start-VM -Name $env:TARGET_VM", env);
                     progress.Report("VM iniciada.");
                 }
 
@@ -329,7 +326,7 @@ namespace GpuPvSetup
             }
         }
 
-        private string RunPowerShellCommand(string command)
+        private string RunPowerShellCommand(string command, Dictionary<string, string>? envVars = null)
         {
             var startInfo = new ProcessStartInfo
             {
@@ -339,6 +336,14 @@ namespace GpuPvSetup
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
+
+            if (envVars != null)
+            {
+                foreach (var kvp in envVars)
+                {
+                    startInfo.Environment[kvp.Key] = kvp.Value;
+                }
+            }
 
             startInfo.ArgumentList.Add("-NoProfile");
             startInfo.ArgumentList.Add("-ExecutionPolicy");
