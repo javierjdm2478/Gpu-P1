@@ -1,0 +1,3 @@
+## 2024-05-18 - Optimized WPF Text Logging Performance
+**Learning:** Appending strings using string concatenation to `TextBlock.Text` in a WPF background process reporting pattern creates a significant O(N²) memory and UI thread bottleneck. The UI must continuously re-measure and re-render the continuously allocating string.
+**Action:** Replace `TextBlock` combined with `ScrollViewer` with a `TextBox`. Use `TextBox.AppendText()` and `TextBox.ScrollToEnd()` for performant string additions without fully regenerating the layout structure, maintaining read-only and appearance with basic properties.
