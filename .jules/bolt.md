@@ -1,0 +1,3 @@
+## 2024-05-24 - Optimize WPF Logging by Replacing TextBlock with TextBox
+**Learning:** In WPF, using string concatenation (`+=`) on a `TextBlock.Text` for logging causes $O(N^2)$ memory allocations and UI thread lag because strings are immutable, and `TextBlock` does not natively support text appending.
+**Action:** Replace `TextBlock` (and its surrounding `ScrollViewer`) with a `TextBox`. Use `TextBox.AppendText()` to avoid large string reallocations, and style the `TextBox` (e.g. `IsReadOnly="True"`, `Background="Transparent"`, `BorderThickness="0"`, `VerticalScrollBarVisibility="Auto"`) to look exactly like the original logging area.
