@@ -1,3 +1,6 @@
 ## 2024-03-30 - WPF Accessibility Enhancements
 **Learning:** TextBlock elements used as labels in WPF are not accessible to screen readers, and interactive elements need AutomationProperties.Name and ToolTips.
 **Action:** Replace TextBlocks functioning as labels with `<Label Target="{Binding ElementName=...}" Padding="0"/>` to maintain visual layout while adding screen reader support, and consistently add `AutomationProperties.Name` and `ToolTip` to inputs, buttons, and progress bars.
+## 2025-07-08 - TextBlock vs TextBox para Log de Eventos en WPF
+**Learning:** En WPF, usar `TextBlock` con concatenación de strings (`+=`) para registros de eventos que crecen frecuentemente provoca asignaciones de memoria O(N^2) y falta de capacidad para seleccionar/copiar texto. Los usuarios prefieren poder copiar la salida del registro y tener un mejor rendimiento.
+**Action:** Reemplazar `TextBlock` con `TextBox` configurado con `IsReadOnly="True"`, `Background="Transparent"`, `BorderThickness="0"`, `TextWrapping="Wrap"` y `VerticalScrollBarVisibility="Auto"`. Esto permite usar `TextBox.AppendText()`, que es más eficiente, habilita la selección de texto para el usuario, elimina la necesidad de un `ScrollViewer` envolvente adicional, y mantiene la misma apariencia. Siempre asegurar atributos de accesibilidad en español como `AutomationProperties.Name` y `ToolTip`.
